@@ -6,6 +6,7 @@ using HarmonyLib;
 using Unity.Netcode;
 using UnityEngine;
 using Object = UnityEngine.Object;
+using System.Collections;
 
 namespace MoreCupboards.Patches;
 
@@ -291,6 +292,9 @@ internal class CupboardMattyFix
                 (grabbable is PhysicsProp && grabbable.itemProperties.itemName == "Sticky note"))
                 return;
 
+            if (StartOfRound.Instance.localPlayerController && !StartOfRoundPatch.IsInitializingGame)
+                return;
+
             try
             {
                 grabbable.isInElevator = true;
@@ -314,6 +318,28 @@ internal class CupboardMattyFix
     }
 
     [HarmonyPatch]
+    internal class StartOfRoundPatch
+    {
+        internal static bool IsInitializingGame = false;
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(StartOfRound), nameof(StartOfRound.Start))]
+        private static void MarkServerStart(StartOfRound __instance)
+        {
+            IsInitializingGame = true;
+            __instance.StartCoroutine(WaitCoupleOfFrames());
+        }
+
+        private static IEnumerator WaitCoupleOfFrames()
+        {
+            yield return new WaitForEndOfFrame();
+            yield return new WaitForEndOfFrame();
+            yield return new WaitForEndOfFrame();
+            IsInitializingGame = false;
+        }
+    }
+
+        [HarmonyPatch]
     internal class GrabbableStartPatch
     {
         [HarmonyTranspiler]
