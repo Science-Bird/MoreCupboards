@@ -40,6 +40,10 @@ namespace MoreCupboards.Patches
         [HarmonyBefore("mrov.terminalformatter")]
         static void TerminalTextCheck(Terminal __instance, TerminalNode node)
         {
+            if (MoreCupboards.separateCupboardEntries.Value)
+            {
+                return;
+            }
             if (node.displayText.Contains("[buyableItemsList]"))
             {
                 storeFlag = true;
@@ -52,6 +56,10 @@ namespace MoreCupboards.Patches
         [HarmonyAfter("mrov.terminalformatter")]
         static void TerminalTextOverride(Terminal __instance)
         {
+            if (MoreCupboards.separateCupboardEntries.Value)
+            {
+                return;
+            }
             string extraSpace = "";
             if (mrovPresent && storeFlag)
             {
@@ -92,6 +100,10 @@ namespace MoreCupboards.Patches
         [HarmonyPrefix]
         static void CupboardCommandOverride(Terminal __instance)
         {
+            if (MoreCupboards.separateCupboardEntries.Value)
+            {
+                return;
+            }
             string command = __instance.screenText.text.Substring(__instance.screenText.text.Length - __instance.textAdded);
             if (command.ToLower() == "cupboard" || command.ToLower().IndexOf("cupb") == 0 || command.ToLower().IndexOf("cupb") == 1)
             {

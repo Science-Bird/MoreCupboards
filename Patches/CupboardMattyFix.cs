@@ -223,7 +223,7 @@ internal class CupboardMattyFix
     internal struct ClosetHolder
     {
         public readonly UnlockableItem Unlockable;
-        public readonly GameObject gameObject;
+        public readonly GameObject? gameObject;
         public readonly List<ShelfHolder> Shelves;
         public readonly Collider Collider;
         public bool IsInitialized;
@@ -252,7 +252,12 @@ internal class CupboardMattyFix
             }
             Unlockable = StartOfRound.Instance.unlockablesList.unlockables
                 .Find(u => u.unlockableName == indexString + "Cupboard");
-
+            if (Unlockable.inStorage)
+            {
+                MoreCupboards.Logger.LogDebug("Cupboard found in storage, skipping! " + "StorageCloset" + indexString);
+                gameObject = null;
+                return;
+            }
             Collider = gameObject.GetComponent<Collider>();
             Shelves = gameObject.GetComponentsInChildren<PlaceableObjectsSurface>().Select(s =>
                 new ShelfHolder

@@ -12,7 +12,7 @@ namespace MoreCupboards
         public static AssetBundle CupboardAssets;
         public static ContentLoader ContentLoader;
         public static Dictionary<string, GameObject> Prefabs = new Dictionary<string, GameObject>();
-        private static int price = 100;
+        private static int price = 300;
         public static void RegisterCupboard()
         {
 
