@@ -344,7 +344,7 @@ internal class CupboardMattyFix
         }
     }
 
-        [HarmonyPatch]
+    [HarmonyPatch]
     internal class GrabbableStartPatch
     {
         [HarmonyTranspiler]

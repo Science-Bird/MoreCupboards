@@ -3,19 +3,23 @@ using System;
 using HarmonyLib;
 using UnityEngine;
 using Unity.Netcode;
+using GameNetcodeStuff;
+using static UnityEngine.Rendering.DebugUI;
 
 namespace MoreCupboards.Patches
 {
     [HarmonyPatch]
-    class CupboardPatches
+    class InteractSurfaceCopy
     {
         internal static bool storeFlag = false;
         public static bool mrovPresent = false;
+        public static bool getData = true;
 
         [HarmonyPatch(typeof(StartOfRound), nameof(StartOfRound.SceneManager_OnLoadComplete1))]
         [HarmonyPostfix]
         static void DestroyCupboardDoors(StartOfRound __instance, string sceneName)
         {
+            getData = true;
             if (sceneName == "SampleSceneRelay" && MoreCupboards.noDoors.Value)
             {
                 GameObject vanillaCupboard = GameObject.Find("StorageCloset");
@@ -211,7 +215,6 @@ namespace MoreCupboards.Patches
             }
         }
 
-
         [HarmonyPatch(typeof(ShipBuildModeManager), nameof(ShipBuildModeManager.StoreShipObjectClientRpc))]
         [HarmonyPrefix]
         static void UnparentItemsOnStoreClient(ShipBuildModeManager __instance, NetworkObjectReference objectRef, int playerWhoStored)
@@ -237,6 +240,51 @@ namespace MoreCupboards.Patches
             }
         }
 
+        [HarmonyPatch(typeof(StartOfRound), nameof(StartOfRound.LoadUnlockables))]
+        [HarmonyPostfix]
+        static void ParentCupboards(StartOfRound __instance)
+        {
+            MoreCupboards.Logger.LogDebug("Parenting existing cupboards to ship...");
+            GameObject hangarShip = GameObject.Find("/Environment/HangarShip");
+            for (int i = 1; i <= MoreCupboards.maximumCupboards.Value; i++)
+            {
+                GameObject customCupboard = GameObject.Find($"StorageCloset{i}(Clone)");
+                GameObject customCupboardAlt = GameObject.Find($"StorageCloset{i}Alt(Clone)");
+                if (customCupboard != null && hangarShip != null)
+                {
+                    customCupboard.transform.SetParent(hangarShip.transform, worldPositionStays: true);
+                }
+                else if (customCupboardAlt != null && hangarShip != null)
+                {
+                    customCupboardAlt.transform.SetParent(hangarShip.transform, worldPositionStays: true);
+                }
+            }
+        }
 
+        [HarmonyPatch(typeof(StartOfRound), nameof(StartOfRound.SpawnUnlockable))]
+        [HarmonyPostfix]
+        static void ParentNewCupboard(StartOfRound __instance, int unlockableIndex)
+        {
+            UnlockableItem unlockableItem = __instance.unlockablesList.unlockables[unlockableIndex];
+            if (unlockableItem.unlockableName.Contains("Cupboard") && unlockableItem.unlockableName != "Cupboard")
+            {
+                MoreCupboards.Logger.LogDebug("Parenting new cupboard to ship...");
+                int indexNumber = int.Parse(unlockableItem.unlockableName.Replace("Cupboard", ""));
+
+                GameObject hangarShip = GameObject.Find("/Environment/HangarShip");
+                GameObject customCupboard = GameObject.Find($"StorageCloset{indexNumber}(Clone)");
+                GameObject customCupboardAlt = GameObject.Find($"StorageCloset{indexNumber}Alt(Clone)");
+                if (customCupboard != null && hangarShip != null)
+                {
+                    customCupboard.transform.SetParent(hangarShip.transform, worldPositionStays: true);
+                }
+                else if (customCupboardAlt != null && hangarShip != null)
+                {
+                    customCupboardAlt.transform.SetParent(hangarShip.transform, worldPositionStays: true);
+                }
+                
+            }
+            
+        }
     }
 }
