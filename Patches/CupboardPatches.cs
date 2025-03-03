@@ -240,9 +240,9 @@ namespace MoreCupboards.Patches
             }
         }
 
-        [HarmonyPatch(typeof(StartOfRound), nameof(StartOfRound.LoadUnlockables))]
+        [HarmonyPatch(typeof(StartOfRound), nameof(StartOfRound.SceneManager_OnLoadComplete1))]
         [HarmonyPostfix]
-        static void ParentCupboards(StartOfRound __instance)
+        static void ParentCupboardsOnLoad(StartOfRound __instance)
         {
             MoreCupboards.Logger.LogDebug("Parenting existing cupboards to ship...");
             GameObject hangarShip = GameObject.Find("/Environment/HangarShip");
@@ -268,7 +268,7 @@ namespace MoreCupboards.Patches
             UnlockableItem unlockableItem = __instance.unlockablesList.unlockables[unlockableIndex];
             if (unlockableItem.unlockableName.Contains("Cupboard") && unlockableItem.unlockableName != "Cupboard")
             {
-                MoreCupboards.Logger.LogDebug("Parenting new cupboard to ship...");
+                MoreCupboards.Logger.LogDebug("Parenting cupboard to ship...");
                 int indexNumber = int.Parse(unlockableItem.unlockableName.Replace("Cupboard", ""));
 
                 GameObject hangarShip = GameObject.Find("/Environment/HangarShip");

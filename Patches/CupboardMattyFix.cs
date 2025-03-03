@@ -165,7 +165,7 @@ internal class CupboardMattyFix
             (grabbable is PhysicsProp && grabbable.itemProperties.itemName == "Sticky note"))
             return;
 
-        var tolerance = 0.05;
+        var tolerance = 0.1;
         var sqrTolerance = tolerance * tolerance;
         try
         {
