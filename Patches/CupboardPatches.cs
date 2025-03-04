@@ -268,21 +268,29 @@ namespace MoreCupboards.Patches
             UnlockableItem unlockableItem = __instance.unlockablesList.unlockables[unlockableIndex];
             if (unlockableItem.unlockableName.Contains("Cupboard") && unlockableItem.unlockableName != "Cupboard")
             {
-                MoreCupboards.Logger.LogDebug("Parenting cupboard to ship...");
-                int indexNumber = int.Parse(unlockableItem.unlockableName.Replace("Cupboard", ""));
-
-                GameObject hangarShip = GameObject.Find("/Environment/HangarShip");
-                GameObject customCupboard = GameObject.Find($"StorageCloset{indexNumber}(Clone)");
-                GameObject customCupboardAlt = GameObject.Find($"StorageCloset{indexNumber}Alt(Clone)");
-                if (customCupboard != null && hangarShip != null)
+                try
                 {
-                    customCupboard.transform.SetParent(hangarShip.transform, worldPositionStays: true);
+                    MoreCupboards.Logger.LogDebug("Parenting cupboard to ship...");
+                    int indexNumber = string.IsNullOrEmpty(unlockableItem.unlockableName.Replace("Cupboard", "")) ? 0 : int.Parse(unlockableItem.unlockableName.Replace("Cupboard", ""));
+                    if (indexNumber <= MoreCupboards.maximumCupboards.Value && indexNumber > 0)
+                    {
+                        GameObject hangarShip = GameObject.Find("/Environment/HangarShip");
+                        GameObject customCupboard = GameObject.Find($"StorageCloset{indexNumber}(Clone)");
+                        GameObject customCupboardAlt = GameObject.Find($"StorageCloset{indexNumber}Alt(Clone)");
+                        if (customCupboard != null && hangarShip != null)
+                        {
+                            customCupboard.transform.SetParent(hangarShip.transform, worldPositionStays: true);
+                        }
+                        else if (customCupboardAlt != null && hangarShip != null)
+                        {
+                            customCupboardAlt.transform.SetParent(hangarShip.transform, worldPositionStays: true);
+                        }
+                    }
                 }
-                else if (customCupboardAlt != null && hangarShip != null)
+                catch (FormatException)
                 {
-                    customCupboardAlt.transform.SetParent(hangarShip.transform, worldPositionStays: true);
+                    MoreCupboards.Logger.LogWarning("Incorrect cupboard name string passed!");
                 }
-                
             }
             
         }
