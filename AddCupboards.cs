@@ -13,8 +13,20 @@ namespace MoreCupboards
         public static ContentLoader ContentLoader;
         public static Dictionary<string, GameObject> Prefabs = new Dictionary<string, GameObject>();
         private static int price = 300;
-        public static void RegisterCupboard()
+        public static bool mattyPresent = false;
+
+        public static void RegisterCupboards()
         {
+            mattyPresent = false;
+            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                if (assembly.GetName().Name == "MattyFixes")
+                {
+                    MoreCupboards.Logger.LogDebug("Found matty!");
+                    mattyPresent = true;
+                    break;
+                }
+            }
 
             if (MoreCupboards.cupboardPrice.Value >= 0)
             {

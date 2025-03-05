@@ -35,7 +35,7 @@ namespace MoreCupboards
             noDoors = base.Config.Bind("General", "No Doors", false, "Remove doors from purchased cupboards (does not affect vanilla cupboard).");
             separateCupboardEntries = base.Config.Bind("General", "Separate Cupboard Entries", false, "Rather than the shop listing a single cupboard, it and the storage menu will list numbered cupboards (1Cupboard, 2Cupboard, etc.) so you can request specific cupboards (if you're experiencing unusal behaviour in the terminal, try enabling this).");
 
-            AddCupboards.RegisterCupboard();
+            AddCupboards.RegisterCupboards();
 
             Patch();
 
