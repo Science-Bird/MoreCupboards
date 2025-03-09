@@ -24,7 +24,10 @@ namespace MoreCupboards.Patches
                 Animator[] animators = vanillaCupboard.GetComponentsInChildren<Animator>();
                 foreach (Animator animator in animators)
                 {
-                    UnityEngine.Object.Destroy(animator.gameObject);
+                    if (animator.gameObject.name == "Cube.000" || animator.gameObject.name == "Cube.002")
+                    {
+                        UnityEngine.Object.Destroy(animator.gameObject);
+                    }
                 }
             }
             foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
