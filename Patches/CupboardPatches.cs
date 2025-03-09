@@ -3,8 +3,6 @@ using System;
 using HarmonyLib;
 using UnityEngine;
 using Unity.Netcode;
-using GameNetcodeStuff;
-using static UnityEngine.Rendering.DebugUI;
 
 namespace MoreCupboards.Patches
 {
