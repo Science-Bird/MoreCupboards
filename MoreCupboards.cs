@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Reflection;
 using BepInEx;
@@ -47,6 +48,22 @@ namespace MoreCupboards
         internal static void Patch()
         {
             Harmony ??= new Harmony(MyPluginInfo.PLUGIN_GUID);
+
+            bool doLobbyCompat = false;
+            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                if (assembly.GetName().Name == "BMX.LobbyCompatibility")
+                {
+                    Logger.LogDebug("Found BMX!");
+                    doLobbyCompat = true;
+                    break;
+                }
+            }
+
+            if (doLobbyCompat)
+            {
+                LobbyCompatibility.RegisterCompatibility();
+            }
 
             Logger.LogDebug("Patching...");
 
