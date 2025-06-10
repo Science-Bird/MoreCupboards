@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using HarmonyLib;
 using UnityEngine;
 
-
 namespace MoreCupboards.Patches;
 
 [HarmonyPatch]
@@ -13,7 +12,7 @@ internal class CupboardSaveStoredItems
 
     static void ApplyCupboardParents()
     {
-        if (!AddCupboards.mattyPresent || !MoreCupboards.autoParent.Value)
+        if (!MoreCupboards.mattyPresent || !MoreCupboards.autoParent.Value)
         {
             return;
         }
@@ -21,23 +20,14 @@ internal class CupboardSaveStoredItems
         GrabbableObject[] grabbables = Object.FindObjectsOfType<GrabbableObject>();
         List<BoxCollider> colliders = new List<BoxCollider>();
 
-        for (int i = 0; i <= MoreCupboards.maximumCupboards.Value; i++)
+        for (int i = 1; i <= MoreCupboards.maximumCupboards.Value; i++)
         {
             string indexString = i.ToString();
             GameObject cupboard;
-            if (i == 0)
+            cupboard = GameObject.Find("StorageCloset" + indexString + "(Clone)/PlacementCollider");
+            if (cupboard == null)
             {
-                if (AddCupboards.mattyPresent) { continue; }
-                indexString = string.Empty;
-                cupboard = GameObject.Find("/Environment/HangarShip/StorageCloset/PlacementCollider");
-            }
-            else
-            {
-                cupboard = GameObject.Find("StorageCloset" + indexString + "(Clone)/PlacementCollider");
-                if (cupboard == null)
-                {
-                    cupboard = GameObject.Find("StorageCloset" + indexString + "Alt" + "(Clone)/PlacementCollider");
-                }
+                cupboard = GameObject.Find("StorageCloset" + indexString + "Alt" + "(Clone)/PlacementCollider");
             }
             if (cupboard == null)
             {
@@ -68,7 +58,7 @@ internal class CupboardSaveStoredItems
     [HarmonyPatch(typeof(StartOfRound), nameof(StartOfRound.LateUpdate))]
     private static void OnUpdate(StartOfRound __instance)
     {
-        if (!AddCupboards.mattyPresent || !MoreCupboards.autoParent.Value)
+        if (!MoreCupboards.mattyPresent || !MoreCupboards.autoParent.Value)
         {
             return;
         }
@@ -88,7 +78,7 @@ internal class CupboardSaveStoredItems
     [HarmonyPatch(typeof(StartOfRound), nameof(StartOfRound.LoadShipGrabbableItems))]
     private static void LoadOnServerSpawn(StartOfRound __instance)
     {
-        if (AddCupboards.mattyPresent && MoreCupboards.autoParent.Value)
+        if (MoreCupboards.mattyPresent && MoreCupboards.autoParent.Value)
         {
             doSync = true;
             syncTimer = 30;
@@ -99,7 +89,7 @@ internal class CupboardSaveStoredItems
     [HarmonyPatch(typeof(StartOfRound), nameof(StartOfRound.SyncShipUnlockablesClientRpc))]
     private static void LoadAfterCupboardSync(StartOfRound __instance)
     {
-        if (AddCupboards.mattyPresent && MoreCupboards.autoParent.Value)
+        if (MoreCupboards.mattyPresent && MoreCupboards.autoParent.Value)
         {
             doSync = true;
             syncTimer = 30;

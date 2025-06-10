@@ -7,17 +7,12 @@ using Unity.Netcode;
 namespace MoreCupboards.Patches
 {
     [HarmonyPatch]
-    class InteractSurfaceCopy
+    class CupboardPatches
     {
-        internal static bool storeFlag = false;
-        public static bool mrovPresent = false;
-        public static bool getData = true;
-
         [HarmonyPatch(typeof(StartOfRound), nameof(StartOfRound.SceneManager_OnLoadComplete1))]
         [HarmonyPostfix]
         static void DestroyCupboardDoors(StartOfRound __instance, string sceneName)
         {
-            getData = true;
             if (sceneName == "SampleSceneRelay" && MoreCupboards.noDoors.Value)
             {
                 GameObject vanillaCupboard = GameObject.Find("StorageCloset");
@@ -30,43 +25,41 @@ namespace MoreCupboards.Patches
                     }
                 }
             }
-            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                if (assembly.GetName().Name == "TerminalFormatter")
-                {
-                    mrovPresent = true;
-                    break;
-                }
-            }
         }
 
         [HarmonyPatch(typeof(Terminal), nameof(Terminal.LoadNewNode))]
         [HarmonyPrefix]
-        [HarmonyBefore("mrov.terminalformatter")]
-        static void TerminalTextCheck(Terminal __instance, TerminalNode node)
+        [HarmonyBefore("TerminalFormatter")]
+        static void TerminalTextCheck(Terminal __instance, TerminalNode node, out bool __state)
         {
-            if (MoreCupboards.separateCupboardEntries.Value)
+            __state = false;
+            if (MoreCupboards.separateCupboardEntries.Value && !MoreCupboards.useColourNames.Value)
             {
                 return;
             }
             if (node.displayText.Contains("[buyableItemsList]"))
             {
-                storeFlag = true;
+                __state = true;
             }
         }
 
         [HarmonyPatch(typeof(Terminal), nameof(Terminal.LoadNewNode))]
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]
-        [HarmonyAfter("mrov.terminalformatter")]
-        static void TerminalTextOverride(Terminal __instance)
+        [HarmonyAfter("TerminalFormatter")]
+        static void TerminalTextOverride(Terminal __instance, bool __state)
         {
             if (MoreCupboards.separateCupboardEntries.Value)
             {
+                if (MoreCupboards.useColourNames.Value)
+                {
+                    __instance.currentText = __instance.currentText.Replace("1Cupboard", "Orange Cupboard").Replace("2Cupboard", "Yellow Cupboard").Replace("3Cupboard", "Green Cupboard").Replace("4Cupboard", "Blue Cupboard").Replace("5Cupboard", "Purple Cupboard");
+                    __instance.screenText.text = __instance.currentText;
+                }
                 return;
             }
             string extraSpace = "";
-            if (mrovPresent && storeFlag)
+            if (MoreCupboards.mrovPresent && __state)
             {
                 extraSpace = " ";
             }
@@ -78,7 +71,7 @@ namespace MoreCupboards.Patches
                     __instance.currentText = __instance.currentText.Replace(name, "Cupboard" + extraSpace);
                 }
             }
-            if (storeFlag)
+            if (__state)
             {
                 int count = __instance.currentText.Split("Cupboard").Length - 1;
                 if (MoreCupboards.maximumCupboards.Value > 1 && __instance.currentText.IndexOf("Cupboard") > 0 && count > 1)
@@ -96,7 +89,6 @@ namespace MoreCupboards.Patches
                         __instance.currentText = __instance.currentText.Replace(cupboardSubstring4, "");
                     }
                 }
-                storeFlag = false;
             }
             __instance.screenText.text = __instance.currentText;
         }
@@ -105,12 +97,37 @@ namespace MoreCupboards.Patches
         [HarmonyPrefix]
         static void CupboardCommandOverride(Terminal __instance)
         {
+            string command = __instance.screenText.text.Substring(__instance.screenText.text.Length - __instance.textAdded).ToLower();
             if (MoreCupboards.separateCupboardEntries.Value)
             {
+                if (MoreCupboards.useColourNames.Value && command.Contains("cupb"))
+                {
+                    if (command.StartsWith("orange cupb"))
+                    {
+                        command = "1Cupboard";
+                    }
+                    else if (command.StartsWith("yellow cupb"))
+                    {
+                        command = "2Cupboard";
+                    }
+                    else if(command.StartsWith("green cupb"))
+                    {
+                        command = "3Cupboard";
+                    }
+                    else if(command.StartsWith("blue cupb"))
+                    {
+                        command = "4Cupboard";
+                    }
+                    else if(command.StartsWith("purple cupb"))
+                    {
+                        command = "5Cupboard";
+                    }
+                    __instance.screenText.text = __instance.screenText.text.Substring(0, __instance.screenText.text.Length - __instance.textAdded) + command;
+                }
                 return;
             }
-            string command = __instance.screenText.text.Substring(__instance.screenText.text.Length - __instance.textAdded);
-            if (command.ToLower() == "cupboard" || command.ToLower().IndexOf("cupb") == 0 || command.ToLower().IndexOf("cupb") == 1)
+
+            if (command == "cupboard" || command.IndexOf("cupb") == 0 || command.IndexOf("cupb") == 1)
             {
                 command = "cupboard";
                 UnlockableItem[] unlockableList = StartOfRound.Instance.unlockablesList.unlockables.ToArray();
@@ -169,74 +186,6 @@ namespace MoreCupboards.Patches
                 if (storedCupboard != -1)
                 {
                     __instance.screenText.text = __instance.screenText.text.Substring(0, __instance.screenText.text.Length - __instance.textAdded) + command;
-                }
-            }
-        }
-
-        [HarmonyPatch(typeof(ShipBuildModeManager), nameof(ShipBuildModeManager.StoreObjectLocalClient))]
-        [HarmonyPrefix]
-        static void UnparentItemsOnStore(ShipBuildModeManager __instance)
-        {
-            if (__instance.timeSincePlacingObject <= 0.25f || !__instance.InBuildMode || __instance.placingObject == null || !StartOfRound.Instance.unlockablesList.unlockables[__instance.placingObject.unlockableID].canBeStored)
-            {
-                return;
-            }
-            UnlockableItem unlockable = StartOfRound.Instance.unlockablesList.unlockables[__instance.placingObject.unlockableID];
-            if (unlockable.unlockableName.Contains("Cupboard"))
-            {
-                StartOfRound playersManager = UnityEngine.Object.FindObjectOfType<StartOfRound>();
-                GrabbableObject[]? shelvedObjects = __instance.placingObject?.parentObject?.gameObject?.GetComponentsInChildren<GrabbableObject>();
-                foreach (GrabbableObject shelfObject in shelvedObjects)
-                {
-                    shelfObject.parentObject = null;
-                    shelfObject.transform.SetParent(playersManager.elevatorTransform, worldPositionStays: true);
-                }
-            }
-        }
-
-        [HarmonyPatch(typeof(ShipBuildModeManager), nameof(ShipBuildModeManager.StoreObjectServerRpc))]
-        [HarmonyPrefix]
-        static void UnparentItemsOnStoreServer(ShipBuildModeManager __instance, NetworkObjectReference objectRef)
-        {
-            NetworkObjectReference tempRef = objectRef;
-            if (!tempRef.TryGet(out var networkObject))
-            {
-                return;
-            }
-            PlaceableShipObject placeObject = networkObject.gameObject.GetComponentInChildren<PlaceableShipObject>();
-            if (StartOfRound.Instance.unlockablesList.unlockables[placeObject.unlockableID].unlockableName.Contains("Cupboard"))
-            {
-                StartOfRound playersManager = UnityEngine.Object.FindObjectOfType<StartOfRound>();
-                GrabbableObject[]? shelvedObjects = placeObject?.parentObject?.gameObject?.GetComponentsInChildren<GrabbableObject>();
-                foreach (GrabbableObject shelfObject in shelvedObjects)
-                {
-                    shelfObject.parentObject = null;
-                    shelfObject.transform.SetParent(playersManager.elevatorTransform, worldPositionStays: true);
-                }
-            }
-        }
-
-        [HarmonyPatch(typeof(ShipBuildModeManager), nameof(ShipBuildModeManager.StoreShipObjectClientRpc))]
-        [HarmonyPrefix]
-        static void UnparentItemsOnStoreClient(ShipBuildModeManager __instance, NetworkObjectReference objectRef, int playerWhoStored)
-        {
-            if (NetworkManager.Singleton == null || __instance.NetworkManager.ShutdownInProgress || __instance.IsServer || playerWhoStored == (int)GameNetworkManager.Instance.localPlayerController.playerClientId)
-            {
-                return;
-            }
-            NetworkObjectReference tempRef = objectRef;
-            if (tempRef.TryGet(out var networkObject))
-            {
-                PlaceableShipObject placeObject = networkObject.gameObject.GetComponentInChildren<PlaceableShipObject>();
-                if (StartOfRound.Instance.unlockablesList.unlockables[placeObject.unlockableID].unlockableName.Contains("Cupboard"))
-                {
-                    StartOfRound playersManager = UnityEngine.Object.FindObjectOfType<StartOfRound>();
-                    GrabbableObject[]? shelvedObjects = placeObject?.parentObject?.gameObject?.GetComponentsInChildren<GrabbableObject>();
-                    foreach (GrabbableObject shelfObject in shelvedObjects)
-                    {
-                        shelfObject.parentObject = null;
-                        shelfObject.transform.SetParent(playersManager.elevatorTransform, worldPositionStays: true);
-                    }
                 }
             }
         }

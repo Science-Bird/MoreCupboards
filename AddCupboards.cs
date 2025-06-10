@@ -4,53 +4,39 @@ using LethalLib.Modules;
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+using LethalLib.Extras;
 
 namespace MoreCupboards
 {
     public class AddCupboards
     {
-        public static AssetBundle CupboardAssets;
-        public static ContentLoader ContentLoader;
-        public static Dictionary<string, GameObject> Prefabs = new Dictionary<string, GameObject>();
+        public static List<UnlockableItemDef> cupboardUnlockables = new List<UnlockableItemDef>();
+        private static readonly string[] colourNames = ["Cupboard Orange", "Cupboard Yellow", "Cupboard Green", "Cupboard Blue", "Cupboard Purple"];
         private static int price = 300;
-        public static bool mattyPresent = false;
 
         public static void RegisterCupboards()
         {
-            mattyPresent = false;
-            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                if (assembly.GetName().Name == "MattyFixes")
-                {
-                    MoreCupboards.Logger.LogDebug("Found matty!");
-                    mattyPresent = true;
-                    break;
-                }
-            }
-
             if (MoreCupboards.cupboardPrice.Value >= 0)
             {
                 price = MoreCupboards.cupboardPrice.Value;
             }
-            CupboardAssets = AssetBundle.LoadFromFile(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "cupboardunlockable"));
 
-            ContentLoader = new ContentLoader(MoreCupboards.pluginInfo, CupboardAssets, (content, prefab) => {
-                Prefabs.Add(content.ID, prefab);
-            });
-
+            TerminalNode cupboardInfoNode = (TerminalNode)MoreCupboards.CupboardAssets.LoadAsset("CupboardInfo");
             string altString = "";
             if (MoreCupboards.noDoors.Value)
             {
                 altString = "Alt";
             }
-
-            List<ContentLoader.CustomContent> contentList = new List<ContentLoader.CustomContent>();
             for (int i = 1; i <= MoreCupboards.maximumCupboards.Value; i++)
             {
-                contentList.Add(new LethalLib.Modules.ContentLoader.Unlockable(i.ToString() + "Cupboard", "Assets/LethalCompany/Mods/MoreCupboards/Cupboard" + i.ToString() + altString + "UnlockableItemDef.asset", price, null, null, "Assets/LethalCompany/Mods/MoreCupboards/CupboardInfo.asset", StoreType.ShipUpgrade));
+                cupboardUnlockables.Add((UnlockableItemDef)MoreCupboards.CupboardAssets.LoadAsset("Cupboard" + i.ToString() + altString + "UnlockableItemDef"));
             }
-            ContentLoader.CustomContent[] content = contentList.ToArray();
-            ContentLoader.RegisterAll(content);
+
+            foreach (UnlockableItemDef cupboard in cupboardUnlockables)
+            {
+                NetworkPrefabs.RegisterNetworkPrefab(cupboard.unlockable.prefabObject);
+                Unlockables.RegisterUnlockable(cupboard, StoreType.ShipUpgrade, null, null, cupboardInfoNode, price);
+            }
         }
     }
 }
